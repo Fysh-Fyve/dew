@@ -14,27 +14,59 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#include <cstring>
 #include <iostream>
 #include <tree_sitter/api.h>
 
 extern "C" TSLanguage *tree_sitter_dew();
 
+class SExpression {
+public:
+  SExpression(TSNode node) { str = ts_node_string(node); }
+  ~SExpression() { free(str); }
+
+  char *str;
+};
+
+class DewParser {
+public:
+  DewParser(std::string v) : source(v) {
+    parser = ts_parser_new();
+    ts_parser_set_language(parser, tree_sitter_dew());
+    tree =
+        ts_parser_parse_string(parser, NULL, source.c_str(), source.length());
+  }
+
+  TSNode root() const { return ts_tree_root_node(tree); }
+
+  ~DewParser() {
+    ts_tree_delete(tree);
+    ts_parser_delete(parser);
+  }
+
+  TSParser *parser;
+  TSTree *tree;
+  std::string source;
+};
+
+// TODO: No copying!
+// But also we're just trying to make this work, maybe it's fine for now
+std::string node_str(TSNode node, DewParser &p) {
+  uint32_t start = ts_node_start_byte(node);
+  uint32_t end = ts_node_end_byte(node);
+  return p.source.substr(start, end - start);
+}
+
 int main() {
-  // Create a parser.
-  TSParser *parser = ts_parser_new();
+  DewParser p = DewParser("fun main() {}");
+  TSNode root_node = p.root();
 
-  // Set the parser's language (Dew in this case).
-  ts_parser_set_language(parser, tree_sitter_dew());
+  TSNode func_node = ts_node_named_child(root_node, 0);
 
-  // Build a syntax tree based on source code stored in a string.
-  const char *source_code = "fun main() {}";
-  TSTree *tree = ts_parser_parse_string(parser, NULL, source_code,
-                                        std::strlen(source_code));
+  auto s = SExpression(func_node);
+  std::cout << "Syntax tree:\n" << s.str << "\n";
 
-  // Get the root node of the syntax tree.
-  TSNode root_node = ts_tree_root_node(tree);
-
+  auto identifier = ts_node_named_child(func_node, 0);
+  std::cout << node_str(identifier, p) << "\n";
   /*
   // Get some child nodes.
   TSNode array_node = ts_node_named_child(root_node, 0);
@@ -53,12 +85,5 @@ int main() {
   */
 
   // Print the syntax tree as an S-expression.
-  char *string = ts_node_string(root_node);
-  std::cout << "Syntax tree: " << string << "\n";
-
-  // Free all of the heap-allocated memory.
-  free(string);
-  ts_tree_delete(tree);
-  ts_parser_delete(parser);
   return 0;
 }
