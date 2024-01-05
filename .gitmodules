@@ -1,0 +1,6 @@
+[submodule "tree-sitter-dew"]
+	path = tree-sitter-dew
+	url = git@github.com:cbebe/tree-sitter-dew
+[submodule "tree-sitter"]
+	path = tree-sitter
+	url = https://github.com/tree-sitter/tree-sitter
