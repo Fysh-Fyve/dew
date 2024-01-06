@@ -17,6 +17,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <string_view>
 #include <tree_sitter/api.h>
 
 extern "C" TSLanguage *tree_sitter_dew();
@@ -32,20 +33,32 @@ public:
 class DewParser {
 public:
   DewParser(std::string filePath) {
-    parser = ts_parser_new();
-    ts_parser_set_language(parser, tree_sitter_dew());
     // TODO: Create custom TSInput?
     // Not sure, maybe reading everything into a string is enough for our
     // purposes
-    std::ifstream sourceFile(filePath);
-    std::stringstream buffer;
-    buffer << sourceFile.rdbuf();
-    source = buffer.str();
-    tree =
-        ts_parser_parse_string(parser, NULL, source.c_str(), source.length());
+    std::ifstream sourceFile{filePath};
+    if (sourceFile.is_open()) {
+      parser = ts_parser_new();
+      ts_parser_set_language(parser, tree_sitter_dew());
+      std::stringstream ss;
+      ss << sourceFile.rdbuf();
+      source = ss.str();
+      tree =
+          ts_parser_parse_string(parser, NULL, source.c_str(), source.length());
+    } else {
+      sourceFile.close();
+      std::cerr << "file `" << filePath << "` could not be read\n";
+      std::exit(1);
+    }
   }
 
   TSNode root() const { return ts_tree_root_node(tree); }
+
+  std::string_view nodeStr(TSNode node) const {
+    uint32_t start = ts_node_start_byte(node);
+    uint32_t end = ts_node_end_byte(node);
+    return std::string_view(source).substr(start, end - start);
+  }
 
   ~DewParser() {
     ts_tree_delete(tree);
@@ -57,46 +70,19 @@ public:
   std::string source;
 };
 
-// TODO: No copying!
-// But also we're just trying to make this work, maybe it's fine for now
-std::string node_str(TSNode node, DewParser &p) {
-  uint32_t start = ts_node_start_byte(node);
-  uint32_t end = ts_node_end_byte(node);
-  return p.source.substr(start, end - start);
-}
-
 int main(int argc, const char *argv[]) {
   if (argc < 2) {
     std::cerr << "USAGE: " << argv[0] << " FILE\n";
     std::exit(1);
   }
   DewParser p = DewParser(argv[1]);
-  TSNode root_node = p.root();
+  TSNode root = p.root();
 
-  TSNode func_node = ts_node_named_child(root_node, 0);
+  std::cout << "Syntax tree:\n" << SExpression(root).str << "\n";
 
-  auto s = SExpression(func_node);
-  std::cout << "Syntax tree:\n" << s.str << "\n";
+  TSNode funNode = ts_node_named_child(root, 0);
+  TSNode identifier = ts_node_named_child(funNode, 0);
+  std::cout << "Function name: " << p.nodeStr(identifier) << "\n";
 
-  auto identifier = ts_node_named_child(func_node, 0);
-  std::cout << "Function name: " << node_str(identifier, p) << "\n";
-  /*
-  // Get some child nodes.
-  TSNode array_node = ts_node_named_child(root_node, 0);
-  TSNode number_node = ts_node_named_child(array_node, 0);
-
-  // Check that the nodes have the expected types.
-  assert(strcmp(ts_node_type(root_node), "document") == 0);
-  assert(strcmp(ts_node_type(array_node), "array") == 0);
-  assert(strcmp(ts_node_type(number_node), "number") == 0);
-
-  // Check that the nodes have the expected child counts.
-  assert(ts_node_child_count(root_node) == 1);
-  assert(ts_node_child_count(array_node) == 5);
-  assert(ts_node_named_child_count(array_node) == 2);
-  assert(ts_node_child_count(number_node) == 0);
-  */
-
-  // Print the syntax tree as an S-expression.
   return 0;
 }

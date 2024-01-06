@@ -19,7 +19,7 @@ GRAMMAR_INCLUDE_FLAGS := -I $(GRAMMAR)/src
 
 SHARED_LIB := tree-sitter/libtree-sitter.a
 
-CXX := g++
+CXXFLAGS := -std=c++17
 
 # juicy
 EXE := dewc
@@ -29,13 +29,15 @@ SRC := src/main.cc
 all: $(EXE)
 
 $(EXE): $(SRC) $(GRAMMAR)/src/parser.o $(SHARED_LIB)
-	$(CXX) -o $@ $(TS_INCLUDE_FLAGS) $^
+	$(CXX) $(CXXFLAGS) -o $@ $(TS_INCLUDE_FLAGS) $^
 
 $(GRAMMAR)/%.o: $(GRAMMAR)/%.c
 	$(CC) -c $(GRAMMAR_INCLUDE_FLAGS) $^ -o $@
 
+COMP_DB := compile_commands.json
+
 # did you `sudo apt install libstdc++-12-dev` ??
-compile_commands.json: $(SRC)
+$(COMP_DB): $(SRC)
 	bear -- $(MAKE) clean all
 
 $(GRAMMAR)/src/parser.c: $(GRAMMAR)/grammar.js
@@ -49,6 +51,6 @@ $(SHARED_LIB):
 	cd tree-sitter && $(MAKE)
 
 clean:
-	rm -rf $(EXE)
+	rm -rf $(EXE) $(COMP_DB)
 
 .PHONY: all clean

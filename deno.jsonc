@@ -1,0 +1,5 @@
+{
+  "fmt": {
+    "exclude": ["tree-sitter/", "tree-sitter-dew/"]
+  }
+}
