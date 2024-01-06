@@ -14,7 +14,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include <fstream>
 #include <iostream>
+#include <sstream>
 #include <tree_sitter/api.h>
 
 extern "C" TSLanguage *tree_sitter_dew();
@@ -29,9 +31,16 @@ public:
 
 class DewParser {
 public:
-  DewParser(std::string v) : source(v) {
+  DewParser(std::string filePath) {
     parser = ts_parser_new();
     ts_parser_set_language(parser, tree_sitter_dew());
+    // TODO: Create custom TSInput?
+    // Not sure, maybe reading everything into a string is enough for our
+    // purposes
+    std::ifstream sourceFile(filePath);
+    std::stringstream buffer;
+    buffer << sourceFile.rdbuf();
+    source = buffer.str();
     tree =
         ts_parser_parse_string(parser, NULL, source.c_str(), source.length());
   }
@@ -56,8 +65,12 @@ std::string node_str(TSNode node, DewParser &p) {
   return p.source.substr(start, end - start);
 }
 
-int main() {
-  DewParser p = DewParser("fun main() {}");
+int main(int argc, const char *argv[]) {
+  if (argc < 2) {
+    std::cerr << "USAGE: " << argv[0] << " FILE\n";
+    std::exit(1);
+  }
+  DewParser p = DewParser(argv[1]);
   TSNode root_node = p.root();
 
   TSNode func_node = ts_node_named_child(root_node, 0);
@@ -66,7 +79,7 @@ int main() {
   std::cout << "Syntax tree:\n" << s.str << "\n";
 
   auto identifier = ts_node_named_child(func_node, 0);
-  std::cout << node_str(identifier, p) << "\n";
+  std::cout << "Function name: " << node_str(identifier, p) << "\n";
   /*
   // Get some child nodes.
   TSNode array_node = ts_node_named_child(root_node, 0);
