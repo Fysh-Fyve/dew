@@ -13,26 +13,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
+rwildcard=$(foreach d,$(wildcard $(1:=/*)),$(call rwildcard,$d,$2) $(filter $(subst *,%,$2),$d))
+
 GRAMMAR := tree-sitter-dew
 TS_INCLUDE_FLAGS := -I tree-sitter/lib/include
 GRAMMAR_INCLUDE_FLAGS := -I $(GRAMMAR)/src
 
 SHARED_LIB := tree-sitter/libtree-sitter.a
 
+
 CXXFLAGS := -std=c++17
 
 # juicy
 EXE := dewc
 
-SRC := src/main.cc
+SRC := $(call rwildcard,src,*.cc)
+
+OBJ := $(SRC:src/%.cc=obj/%.o)
 
 all: $(EXE)
 
-$(EXE): $(SRC) $(GRAMMAR)/src/parser.o $(SHARED_LIB)
-	$(CXX) $(CXXFLAGS) -o $@ $(TS_INCLUDE_FLAGS) $^
+$(EXE): $(OBJ) $(GRAMMAR)/src/parser.o $(SHARED_LIB)
+	@echo CXX $^
+	@$(CXX) $(CXXFLAGS) -o $@ $(TS_INCLUDE_FLAGS) $^
+
+obj/%.o: src/%.cc | obj
+	@echo CXX $^
+	@$(CXX) -c $(CXXFLAGS) $(TS_INCLUDE_FLAGS) $^ -o $@
+
+obj:
+	mkdir $@
 
 $(GRAMMAR)/%.o: $(GRAMMAR)/%.c
-	$(CC) -c $(GRAMMAR_INCLUDE_FLAGS) $^ -o $@
+	@echo CC $^
+	@$(CC) -c $(GRAMMAR_INCLUDE_FLAGS) $^ -o $@
 
 COMP_DB := compile_commands.json
 
@@ -51,6 +65,6 @@ $(SHARED_LIB):
 	cd tree-sitter && $(MAKE)
 
 clean:
-	rm -rf $(EXE) $(COMP_DB)
+	rm -rf $(EXE) $(OBJ) $(COMP_DB)
 
 .PHONY: all clean

@@ -1,3 +1,5 @@
 .cache/clangd/index
 compile_commands.json
 dewc
+.vscode
+obj
