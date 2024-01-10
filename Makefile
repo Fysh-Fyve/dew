@@ -37,9 +37,9 @@ $(EXE): $(OBJ) $(GRAMMAR)/src/parser.o $(SHARED_LIB)
 	@echo CXX $^
 	@$(CXX) $(CXXFLAGS) -o $@ $(TS_INCLUDE_FLAGS) $^
 
-obj/%.o: src/%.cc | obj
-	@echo CXX $^
-	@$(CXX) -c $(CXXFLAGS) $(TS_INCLUDE_FLAGS) $^ -o $@
+obj/%.o: src/%.cc $(SHARED_LIB) | obj
+	@echo CXX $<
+	@$(CXX) -c $(CXXFLAGS) $(TS_INCLUDE_FLAGS) $< -o $@
 
 obj:
 	mkdir $@
@@ -61,7 +61,11 @@ $(GRAMMAR)/grammar.js:
 	git submodule init
 	git submodule update
 
-$(SHARED_LIB):
+tree-sitter/Makefile:
+	git submodule init
+	git submodule update
+
+$(SHARED_LIB): tree-sitter/Makefile
 	cd tree-sitter && $(MAKE)
 
 clean:
