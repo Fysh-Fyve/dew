@@ -1,5 +1,8 @@
 # Dew
 
+> You only need THREE things for a programming language: loops, functions,
+> arithmetic
+
 ## Requirements
 
 - C and C++ compiler
