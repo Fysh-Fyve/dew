@@ -14,34 +14,32 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef DEW_MAIN_H_
-#define DEW_MAIN_H_
-#include <string>
-#include <tree_sitter/api.h>
+#ifndef DEW_AST_H_
+#define DEW_AST_H_
 
-extern "C" TSLanguage *tree_sitter_dew();
+#include "type.h"
+#include <memory>
+namespace ast {
 
-class SExpression {
-public:
-  SExpression(TSNode node);
-  ~SExpression();
-  const char *str() const;
+class Statement {};
 
+class SimpleStatement : Statement {};
+
+class ForStatement : Statement {};
+
+class ReturnStatement : Statement {};
+
+class Block : Statement {};
+
+class Function {
 private:
-  char *string;
-};
+  std::unique_ptr<Block> block;
+}; // No first-class functions here 😭
 
-class DewParser {
-public:
-  DewParser(std::string source);
-  TSNode root() const;
-  std::string_view nodeStr(TSNode node) const;
-  ~DewParser();
-
+class Expression {
 private:
-  TSParser *parser;
-  TSTree *tree;
-  std::string source;
+  DataType type;
 };
+} // namespace ast
 
-#endif // DEW_MAIN_H_
+#endif // !DEW_AST_H_

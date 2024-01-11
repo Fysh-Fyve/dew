@@ -14,34 +14,20 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef DEW_MAIN_H_
-#define DEW_MAIN_H_
-#include <string>
-#include <tree_sitter/api.h>
+#ifndef DEW_TYPE_H_
+#define DEW_TYPE_H_
 
-extern "C" TSLanguage *tree_sitter_dew();
+#include <string_view>
 
-class SExpression {
-public:
-  SExpression(TSNode node);
-  ~SExpression();
-  const char *str() const;
+using DataType = std::string_view;
 
-private:
-  char *string;
-};
+namespace builtins {
+constexpr DataType INT8 = "i8";
+constexpr DataType INT16 = "i16";
+constexpr DataType INT32 = "i32";
+constexpr DataType UINT8 = "u8";
+constexpr DataType UINT16 = "u16";
+constexpr DataType UINT32 = "u32";
+}; // namespace builtins
 
-class DewParser {
-public:
-  DewParser(std::string source);
-  TSNode root() const;
-  std::string_view nodeStr(TSNode node) const;
-  ~DewParser();
-
-private:
-  TSParser *parser;
-  TSTree *tree;
-  std::string source;
-};
-
-#endif // DEW_MAIN_H_
+#endif // !DEW_TYPE_H_
