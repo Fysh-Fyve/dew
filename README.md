@@ -1,6 +1,6 @@
 # Dew
 
-> You only need THREE things for a programming language: loops, functions,
+> You only need THREE things for a programming language: branching, functions,
 > arithmetic
 
 ## Requirements
