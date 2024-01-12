@@ -20,6 +20,7 @@
 #include <iostream>
 #include <memory>
 #include <optional>
+#include <ostream>
 #include <string_view>
 #include <tree_sitter/api.h>
 #include <unordered_map>
@@ -27,12 +28,11 @@
 
 extern "C" TSLanguage *tree_sitter_dew();
 
+void dbg(TSNode node) { std::cout << SExpression{node}.get() << std::endl; }
+
 DewParser::DewParser(std::string source)
     : source(source), parser(ts_parser_new()) {
   ts_parser_set_language(parser, tree_sitter_dew());
-  // TODO: Create custom TSInput?
-  // Not sure, maybe reading everything into a string is enough for our
-  // purposes
   tree = ts_parser_parse_string(parser, NULL, source.c_str(), source.length());
 }
 
@@ -43,7 +43,7 @@ ast::Parameter DewParser::parseParameter(TSNode node) {
   std::string_view typeName{ts_node_type(type)};
   std::string_view name = nodeStr(getField(node, "name"));
   if (typeName != "builtin_type") {
-    // Do check here??
+    // TODO: Do check here??
   }
   return ast::Parameter{.type = nodeStr(type), .name = name};
 }
@@ -94,22 +94,33 @@ std::unique_ptr<ast::Expression> DewParser::parseExpression(TSNode node) {
     std::unique_ptr<ast::Expression> right =
         parseExpression(getField(node, "right"));
     std::string_view op = nodeStr(getField(node, "operator"));
+    // TODO: Throw on invalid expression?
+    if (!left || !right) {
+      return std::unique_ptr<ast::Expression>(nullptr);
+    }
     if (left->type != right->type) {
-      // handle error?
+      // TODO: handle error?
     }
     std::optional<ast::BinaryOp> binOp = getBinaryOp(op);
     if (binOp.has_value()) {
+      // TODO: CHeck if the operation is valid
       // check if the operator is valid, but then again we only have integers?
       return std::make_unique<ast::BinaryExpression>(
           std::move(left), binOp.value(), std::move(right));
     }
-    // std::cout << SExpression{op}.get() << "\n";
     return std::unique_ptr<ast::Expression>(nullptr);
+  } else if (type == "identifier") {
+    // TODO: check for conflicts here
+    return std::make_unique<ast::Identifier>(nodeStr(node));
+  } else if (type == "int_literal") {
+    // TODO: parse integer
+    nodeStr(node);
   } else {
+    // TODO: do the rest of the expression types
     std::cerr << "Invalid type: " << type << "\n";
   }
-  std::cout << SExpression{node}.get() << "\n";
-  return std::unique_ptr<ast::Expression>();
+  dbg(node);
+  return std::unique_ptr<ast::Expression>(nullptr);
 }
 
 std::unique_ptr<ast::Statement> DewParser::parseStatement(TSNode node) {
@@ -125,13 +136,16 @@ std::unique_ptr<ast::Statement> DewParser::parseStatement(TSNode node) {
             : parseBlock(alternative));
 
   } else if (type == "return_statement") {
-    std::cout << SExpression{node}.get() << "\n";
+    dbg(node);
     return std::unique_ptr<ast::Statement>(nullptr);
   } else if (type == "expression_statement") {
-    std::cout << SExpression{node}.get() << "\n";
+    return std::make_unique<ast::ExpressionStatement>(
+        parseExpression(ts_node_named_child(node, 0)));
     return std::unique_ptr<ast::Statement>(nullptr);
   } else {
+    // TODO: do the rest of the statement types
     std::cerr << "Invalid type: " << type << "\n";
+    dbg(node);
     return std::unique_ptr<ast::Statement>(nullptr);
   }
 }

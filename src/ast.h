@@ -60,15 +60,48 @@ public:
   BinaryOp op;
 };
 
+class Identifier : public Expression {
+public:
+  Identifier(std::string_view name) : name(name) {}
+  std::string_view name;
+};
+
 class Statement {};
 
-class SimpleStatement : Statement {};
+class ExpressionStatement : public Statement {
+public:
+  ExpressionStatement(std::unique_ptr<Expression> expr)
+      : expr(std::move(expr)) {}
+  std::unique_ptr<Expression> expr;
+};
+class IncrementStatement : public Statement {
+public:
+  IncrementStatement(std::unique_ptr<Expression> expr)
+      : expr(std::move(expr)) {}
+  std::unique_ptr<Expression> expr;
+};
+class DecrementStatement : public Statement {
+public:
+  DecrementStatement(std::unique_ptr<Expression> expr)
+      : expr(std::move(expr)) {}
+  std::unique_ptr<Expression> expr;
+};
+class AssignmentStatement : public Statement {
+public:
+  AssignmentStatement(std::unique_ptr<Expression> left,
+                      std::unique_ptr<Expression> right)
+      : left(std::move(left)), right(std::move(right)) {}
+  std::unique_ptr<Expression> left;
+  std::unique_ptr<Expression> right;
+};
 
 class ForStatement : Statement {};
 
-class ReturnStatement : Statement {
+class ReturnStatement : public Statement {
 public:
-  std::unique_ptr<Expression> return_value;
+  ReturnStatement(std::unique_ptr<Expression> value)
+      : value(std::move(value)) {}
+  std::unique_ptr<Expression> value;
 };
 
 class BlockStatement : Statement {
@@ -100,6 +133,7 @@ public:
 class Function {
 public:
   std::string_view name;
+  std::vector<DataType> returnValues;
   std::optional<std::vector<Parameter>> params;
   std::unique_ptr<BlockStatement> block;
 }; // No first-class functions here 😭
