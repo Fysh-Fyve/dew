@@ -16,10 +16,8 @@
  */
 #ifndef DEW_MAIN_H_
 #define DEW_MAIN_H_
-#include <string>
-#include <tree_sitter/api.h>
 
-#include "ast.h"
+#include <tree_sitter/api.h>
 
 extern "C" TSLanguage *tree_sitter_dew();
 

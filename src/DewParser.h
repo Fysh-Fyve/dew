@@ -42,6 +42,7 @@ public:
   ast::Function parseFunction(TSNode node);
   ast::Parameter parseParameter(TSNode node);
   ast::Block parseBlock(TSNode node);
+  std::unique_ptr<ast::Statement> parseStatement(TSNode node);
 
   ParamList parseParamList(TSNode node);
 

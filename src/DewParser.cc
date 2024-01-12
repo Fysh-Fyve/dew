@@ -18,6 +18,7 @@
 #include "ast.h"
 #include "main.h"
 #include <iostream>
+#include <memory>
 #include <optional>
 #include <string_view>
 #include <tree_sitter/api.h>
@@ -61,9 +62,28 @@ ParamList DewParser::parseParamList(TSNode node) {
   return p;
 }
 
+std::unique_ptr<ast::Statement> DewParser::parseStatement(TSNode node) {
+  std::string_view type{ts_node_type(node)};
+  if (type == "if_statement") {
+    return std::unique_ptr<ast::Statement>(nullptr);
+  } else if (type == "return_statement") {
+    return std::unique_ptr<ast::Statement>(nullptr);
+  } else if (type == "expression_statement") {
+    return std::unique_ptr<ast::Statement>(nullptr);
+  } else {
+    std::cerr << "Invalid type: " << type << "\n";
+    return std::unique_ptr<ast::Statement>(nullptr);
+  }
+}
+
 ast::Block DewParser::parseBlock(TSNode node) {
-  std::cout << "TODO: BLOCC " << SExpression{node}.get() << "\n";
-  return ast::Block{};
+  std::vector<std::unique_ptr<ast::Statement>> list;
+  TSNode s{ts_node_named_child(node, 0)};
+  while (!ts_node_is_null(s)) {
+    list.push_back(parseStatement(s));
+    s = ts_node_next_named_sibling(s);
+  }
+  return ast::Block(std::move(list));
 }
 
 ast::Function DewParser::parseFunction(TSNode node) {

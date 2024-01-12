@@ -41,6 +41,8 @@ public:
 
 class Block : Statement {
 public:
+  Block(std::vector<std::unique_ptr<Statement>> statements)
+      : statements(std::move(statements)) {}
   std::vector<std::unique_ptr<Statement>> statements;
 };
 
