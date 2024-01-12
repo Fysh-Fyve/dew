@@ -39,9 +39,9 @@ public:
   std::optional<Expression> return_value;
 };
 
-class Block : Statement {
+class BlockStatement : Statement {
 public:
-  Block(std::vector<std::unique_ptr<Statement>> statements)
+  BlockStatement(std::vector<std::unique_ptr<Statement>> statements)
       : statements(std::move(statements)) {}
   std::vector<std::unique_ptr<Statement>> statements;
 };
@@ -56,7 +56,7 @@ class Function {
 public:
   std::string_view name;
   std::optional<std::vector<Parameter>> params;
-  Block block;
+  BlockStatement block;
 }; // No first-class functions here 😭
 
 } // namespace ast
