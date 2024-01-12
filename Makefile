@@ -22,7 +22,7 @@ GRAMMAR_INCLUDE_FLAGS := -I $(GRAMMAR)/src
 SHARED_LIB := tree-sitter/libtree-sitter.a
 
 
-CXXFLAGS := -std=c++17
+CXXFLAGS := -std=c++17 -Wall -Wpedantic
 
 # juicy
 EXE := dewc

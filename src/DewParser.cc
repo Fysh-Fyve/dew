@@ -45,7 +45,7 @@ ast::Parameter DewParser::parseParameter(TSNode node) {
   if (typeName != "builtin_type") {
     // TODO: Do check here??
   }
-  return ast::Parameter{.type = nodeStr(type), .name = name};
+  return ast::Parameter{nodeStr(type), name};
 }
 
 ParamList DewParser::parseParamList(TSNode node) {
@@ -114,7 +114,23 @@ std::unique_ptr<ast::Expression> DewParser::parseExpression(TSNode node) {
     return std::make_unique<ast::Identifier>(nodeStr(node));
   } else if (type == "int_literal") {
     // TODO: parse integer
-    nodeStr(node);
+    TSNode dec = getField(node, "dec_digits");
+    if (!ts_node_is_null(dec)) {
+      std::cout << nodeStr(dec) << std::endl;
+    }
+    TSNode hex = getField(node, "hex_digits");
+    if (!ts_node_is_null(hex)) {
+      std::cout << nodeStr(hex) << std::endl;
+    }
+    TSNode bin = getField(node, "bin_digits");
+    if (!ts_node_is_null(bin)) {
+      std::cout << nodeStr(bin) << std::endl;
+    }
+    TSNode oct = getField(node, "oct_digits");
+    if (!ts_node_is_null(oct)) {
+      std::cout << nodeStr(oct) << std::endl;
+    }
+    std::cout << nodeStr(node) << std::endl;
   } else {
     // TODO: do the rest of the expression types
     std::cerr << "Invalid type: " << type << "\n";
@@ -136,11 +152,24 @@ std::unique_ptr<ast::Statement> DewParser::parseStatement(TSNode node) {
             : parseBlock(alternative));
 
   } else if (type == "return_statement") {
-    dbg(node);
+    std::vector<std::unique_ptr<ast::Expression>> values;
+    std::cout << "RETURN: ";
+    DewCursor cur{node};
+    TSTreeCursor *c{&cur.get()->cur};
+    if (ts_tree_cursor_goto_first_child(c)) {
+      dbg(node);
+    } else {
+      std::cout << "Oops: ";
+      dbg(node);
+    }
+    // dbg(ts_node_named_child(ts_node_named_child(node, 0), 0));
     return std::unique_ptr<ast::Statement>(nullptr);
   } else if (type == "expression_statement") {
     return std::make_unique<ast::ExpressionStatement>(
         parseExpression(ts_node_named_child(node, 0)));
+    return std::unique_ptr<ast::Statement>(nullptr);
+  } else if (type == "var_declaration") {
+    // Assignment statement??
     return std::unique_ptr<ast::Statement>(nullptr);
   } else {
     // TODO: do the rest of the statement types
@@ -162,9 +191,10 @@ std::unique_ptr<ast::BlockStatement> DewParser::parseBlock(TSNode node) {
 
 ast::Function DewParser::parseFunction(TSNode node) {
   return ast::Function{
-      .name = nodeStr(getField(node, "name")),
-      .params = parseParamList(getField(node, "parameters")),
-      .block = parseBlock(getField(node, "body")),
+      nodeStr(getField(node, "name")),
+      std::vector<DataType>(), // TODO: Parse return type
+      parseParamList(getField(node, "parameters")),
+      parseBlock(getField(node, "body")),
   };
 }
 

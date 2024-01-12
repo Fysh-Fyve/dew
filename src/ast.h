@@ -68,6 +68,14 @@ public:
 
 class Statement {};
 
+class VarDeclaration : public Statement {
+public:
+  VarDeclaration(std::string_view name, DataType type)
+      : name(name), type(type) {}
+  std::string_view name;
+  DataType type;
+};
+
 class ExpressionStatement : public Statement {
 public:
   ExpressionStatement(std::unique_ptr<Expression> expr)

@@ -1,11 +1,30 @@
-fun fib(i32 n) {
+fun fib(i32 n) i32 {
   if (n <= 1) {
     return 1
+    return
   } else {
     return fib(n - 1) + fib(n - 2)
   }
 }
 
+fun fib_iter(i32 n) i32 {
+  i32 a, b, i
+  a = 0b00_00
+  b = 0o001
+  if n == 0 {
+    return a
+  }
+
+  for i = 2; i <= n; i++ {
+    a, b = b, a + b
+  }
+
+  return b
+}
+
 fun main() {
+  i8 a = 100
+  u32 b = 0xFA_CE_FA_CE
   print(fib(5))
+  print(fib_iter(5))
 }

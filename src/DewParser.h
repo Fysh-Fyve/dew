@@ -50,9 +50,9 @@ public:
   ~DewParser();
 
 private:
+  std::string source;
   TSParser *parser;
   TSTree *tree;
-  std::string source;
 };
 
 template <std::size_t N>
