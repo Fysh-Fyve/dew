@@ -23,9 +23,41 @@
 #include <string_view>
 #include <vector>
 namespace ast {
+enum class BinaryOp {
+  Add,
+  Sub,
+  BitOr,
+  BitXor,
+  Mul,
+  Div,
+  Mod,
+  ShiftLeft,
+  ShiftRight,
+  BitAnd,
+  GT,
+  LT,
+  GTEq,
+  LTEq,
+  Eq,
+  Neq,
+  And,
+  Or,
+};
+
+enum class UnaryOp { Pos, Neg, Not, BitNot, Deref, Ref };
 class Expression {
 public:
   DataType type;
+};
+
+class BinaryExpression : public Expression {
+public:
+  BinaryExpression(std::unique_ptr<Expression> left, BinaryOp op,
+                   std::unique_ptr<Expression> right)
+      : left(std::move(left)), right(std::move(right)), op(op) {}
+  std::unique_ptr<Expression> left;
+  std::unique_ptr<Expression> right;
+  BinaryOp op;
 };
 
 class Statement {};
@@ -36,7 +68,7 @@ class ForStatement : Statement {};
 
 class ReturnStatement : Statement {
 public:
-  std::optional<Expression> return_value;
+  std::unique_ptr<Expression> return_value;
 };
 
 class BlockStatement : Statement {
@@ -44,6 +76,19 @@ public:
   BlockStatement(std::vector<std::unique_ptr<Statement>> statements)
       : statements(std::move(statements)) {}
   std::vector<std::unique_ptr<Statement>> statements;
+};
+
+class IfStatement : public Statement {
+public:
+  IfStatement(std::unique_ptr<Expression> condition,
+              std::unique_ptr<BlockStatement> consequence,
+              std::unique_ptr<BlockStatement> alternative)
+      : condition(std::move(condition)), consequence(std::move(consequence)),
+        alternative(std::move(alternative)) {}
+
+  std::unique_ptr<Expression> condition;
+  std::unique_ptr<BlockStatement> consequence;
+  std::unique_ptr<BlockStatement> alternative;
 };
 
 class Parameter {
@@ -56,7 +101,7 @@ class Function {
 public:
   std::string_view name;
   std::optional<std::vector<Parameter>> params;
-  BlockStatement block;
+  std::unique_ptr<BlockStatement> block;
 }; // No first-class functions here 😭
 
 } // namespace ast

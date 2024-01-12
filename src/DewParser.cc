@@ -22,6 +22,7 @@
 #include <optional>
 #include <string_view>
 #include <tree_sitter/api.h>
+#include <unordered_map>
 #include <vector>
 
 extern "C" TSLanguage *tree_sitter_dew();
@@ -62,13 +63,72 @@ ParamList DewParser::parseParamList(TSNode node) {
   return p;
 }
 
+std::optional<ast::BinaryOp> getBinaryOp(const std::string_view &str) {
+  static const std::unordered_map<std::string_view, ast::BinaryOp> enumMap = {
+      {"*", ast::BinaryOp::Mul},         {"/", ast::BinaryOp::Div},
+      {"%", ast::BinaryOp::Mod},         {"<<", ast::BinaryOp::ShiftLeft},
+      {">>", ast::BinaryOp::ShiftRight}, {"&", ast::BinaryOp::BitAnd},
+      {"+", ast::BinaryOp::Add},         {"-", ast::BinaryOp::Sub},
+      {"|", ast::BinaryOp::BitOr},       {"^", ast::BinaryOp::BitXor},
+      {">", ast::BinaryOp::GT},          {"<", ast::BinaryOp::LT},
+      {">=", ast::BinaryOp::GTEq},       {"<=", ast::BinaryOp::LTEq},
+      {"==", ast::BinaryOp::Eq},         {"!=", ast::BinaryOp::Neq},
+      {"&&", ast::BinaryOp::And},        {"||", ast::BinaryOp::Or},
+  };
+  auto it = enumMap.find(str);
+  if (it != enumMap.end()) {
+    return it->second;
+  } else {
+    std::cerr << "Invalid operand: " << str << "\n";
+    return std::nullopt;
+  }
+}
+
+std::unique_ptr<ast::Expression> DewParser::parseExpression(TSNode node) {
+  std::string_view type{ts_node_type(node)};
+  if (type == "parenthesized_expression") {
+    return parseExpression(ts_node_named_child(node, 0));
+  } else if (type == "binary_expression") {
+    std::unique_ptr<ast::Expression> left =
+        parseExpression(getField(node, "left"));
+    std::unique_ptr<ast::Expression> right =
+        parseExpression(getField(node, "right"));
+    std::string_view op = nodeStr(getField(node, "operator"));
+    if (left->type != right->type) {
+      // handle error?
+    }
+    std::optional<ast::BinaryOp> binOp = getBinaryOp(op);
+    if (binOp.has_value()) {
+      // check if the operator is valid, but then again we only have integers?
+      return std::make_unique<ast::BinaryExpression>(
+          std::move(left), binOp.value(), std::move(right));
+    }
+    // std::cout << SExpression{op}.get() << "\n";
+    return std::unique_ptr<ast::Expression>(nullptr);
+  } else {
+    std::cerr << "Invalid type: " << type << "\n";
+  }
+  std::cout << SExpression{node}.get() << "\n";
+  return std::unique_ptr<ast::Expression>();
+}
+
 std::unique_ptr<ast::Statement> DewParser::parseStatement(TSNode node) {
   std::string_view type{ts_node_type(node)};
   if (type == "if_statement") {
-    return std::unique_ptr<ast::Statement>(nullptr);
+    TSNode condition = getField(node, "condition");
+    TSNode consequence = getField(node, "consequence");
+    TSNode alternative = getField(node, "alternative");
+    return std::make_unique<ast::IfStatement>(
+        parseExpression(condition), parseBlock(consequence),
+        ts_node_is_null(alternative)
+            ? std::unique_ptr<ast::BlockStatement>(nullptr)
+            : parseBlock(alternative));
+
   } else if (type == "return_statement") {
+    std::cout << SExpression{node}.get() << "\n";
     return std::unique_ptr<ast::Statement>(nullptr);
   } else if (type == "expression_statement") {
+    std::cout << SExpression{node}.get() << "\n";
     return std::unique_ptr<ast::Statement>(nullptr);
   } else {
     std::cerr << "Invalid type: " << type << "\n";
@@ -76,14 +136,14 @@ std::unique_ptr<ast::Statement> DewParser::parseStatement(TSNode node) {
   }
 }
 
-ast::BlockStatement DewParser::parseBlock(TSNode node) {
+std::unique_ptr<ast::BlockStatement> DewParser::parseBlock(TSNode node) {
   std::vector<std::unique_ptr<ast::Statement>> list;
   TSNode s{ts_node_named_child(node, 0)};
   while (!ts_node_is_null(s)) {
     list.push_back(parseStatement(s));
     s = ts_node_next_named_sibling(s);
   }
-  return ast::BlockStatement(std::move(list));
+  return std::make_unique<ast::BlockStatement>(std::move(list));
 }
 
 ast::Function DewParser::parseFunction(TSNode node) {
