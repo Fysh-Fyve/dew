@@ -19,29 +19,23 @@
 #include <string>
 #include <tree_sitter/api.h>
 
+#include "ast.h"
+
 extern "C" TSLanguage *tree_sitter_dew();
 
-class SExpression {
+template <typename TSObject, TSObject *(*Alloc)(TSNode),
+          void (*Dealloc)(TSObject *)>
+class DewTSObject {
 public:
-  SExpression(TSNode node);
-  ~SExpression();
-  const char *str() const;
+  DewTSObject(TSNode node) : ptr{Alloc(node)} {}
+  ~DewTSObject() { Dealloc(ptr); }
+  TSObject *get() const { return ptr; }
 
 private:
-  char *string;
+  TSObject *ptr;
 };
 
-class DewParser {
-public:
-  DewParser(std::string source);
-  TSNode root() const;
-  std::string_view nodeStr(TSNode node) const;
-  ~DewParser();
-
-private:
-  TSParser *parser;
-  TSTree *tree;
-  std::string source;
-};
+inline void freeChar(char *b) { free(b); }
+using SExpression = DewTSObject<char, ts_node_string, freeChar>;
 
 #endif // DEW_MAIN_H_

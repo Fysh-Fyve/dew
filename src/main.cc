@@ -14,13 +14,11 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "DewParser.h"
 #include <fstream>
 #include <iostream>
 #include <sstream>
-#include <string_view>
 #include <tree_sitter/api.h>
-
-#include "main.h"
 
 std::string fileToString(const char *path) {
   std::ifstream sourceFile{path};
@@ -41,12 +39,7 @@ int main(int argc, const char *argv[]) {
   }
 
   DewParser p{fileToString(argv[1])};
-  TSNode root{p.root()};
-  std::cout << "Syntax tree:\n" << SExpression(root).str() << "\n";
-
-  TSNode funNode{ts_node_named_child(root, 0)};
-  TSNode identifier{ts_node_named_child(funNode, 0)};
-  std::cout << "Function name: " << p.nodeStr(identifier) << "\n";
+  p.parseSource();
 
   return 0;
 }

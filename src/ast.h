@@ -19,7 +19,14 @@
 
 #include "type.h"
 #include <memory>
+#include <optional>
+#include <string_view>
+#include <vector>
 namespace ast {
+class Expression {
+public:
+  DataType type;
+};
 
 class Statement {};
 
@@ -27,19 +34,29 @@ class SimpleStatement : Statement {};
 
 class ForStatement : Statement {};
 
-class ReturnStatement : Statement {};
+class ReturnStatement : Statement {
+public:
+  std::optional<Expression> return_value;
+};
 
-class Block : Statement {};
+class Block : Statement {
+public:
+  std::vector<std::unique_ptr<Statement>> statements;
+};
+
+class Parameter {
+public:
+  DataType type;
+  std::string_view name;
+};
 
 class Function {
-private:
-  std::unique_ptr<Block> block;
+public:
+  std::string_view name;
+  std::optional<std::vector<Parameter>> params;
+  Block block;
 }; // No first-class functions here 😭
 
-class Expression {
-private:
-  DataType type;
-};
 } // namespace ast
 
 #endif // !DEW_AST_H_
