@@ -29,15 +29,18 @@ using Expr = ast::Expr;
 using Stmt = ast::Stmt;
 using Block = ast::Block;
 
-extern "C" TSLanguage *tree_sitter_dew();
-
 void dbg(TSNode node) { std::cout << SExpression{node}.get() << std::endl; }
 
-DewParser::DewParser(std::string source)
-    : source(source), parser(ts_parser_new()) {
-  ts_parser_set_language(parser, tree_sitter_dew());
-  tree = ts_parser_parse_string(parser, NULL, source.c_str(), source.length());
+TSParser *newTSParser() {
+  auto p{ts_parser_new()};
+  ts_parser_set_language(p, tree_sitter_dew());
+  return p;
 }
+
+DewParser::DewParser(std::string source)
+    : source(source), parser(newTSParser()),
+      tree(ts_parser_parse_string(parser, nullptr, source.c_str(),
+                                  source.length())) {}
 
 TSNode DewParser::root() const { return ts_tree_root_node(tree); }
 
