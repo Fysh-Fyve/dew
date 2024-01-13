@@ -22,6 +22,7 @@
 #include <optional>
 #include <string_view>
 #include <vector>
+
 namespace ast {
 enum class BinaryOp {
   Add,
@@ -50,13 +51,14 @@ public:
   DataType type;
 };
 
+using Expr = std::unique_ptr<ast::Expression>;
+
 class BinaryExpression : public Expression {
 public:
-  BinaryExpression(std::unique_ptr<Expression> left, BinaryOp op,
-                   std::unique_ptr<Expression> right)
+  BinaryExpression(Expr left, BinaryOp op, Expr right)
       : left(std::move(left)), right(std::move(right)), op(op) {}
-  std::unique_ptr<Expression> left;
-  std::unique_ptr<Expression> right;
+  Expr left;
+  Expr right;
   BinaryOp op;
 };
 
@@ -66,7 +68,23 @@ public:
   std::string_view name;
 };
 
+class IntegerLiteral : public Expression {
+public:
+  IntegerLiteral(uint64_t num) : num(num) {}
+  uint64_t num;
+};
+
+class CallExpression : public Expression {
+public:
+  CallExpression(Expr function, std::vector<Expr> arguments)
+      : function(std::move(function)), arguments(std::move(arguments)) {}
+  Expr function;
+  std::vector<Expr> arguments;
+};
+
 class Statement {};
+
+using Stmt = std::unique_ptr<ast::Statement>;
 
 class VarDeclaration : public Statement {
 public:
@@ -78,58 +96,62 @@ public:
 
 class ExpressionStatement : public Statement {
 public:
-  ExpressionStatement(std::unique_ptr<Expression> expr)
-      : expr(std::move(expr)) {}
-  std::unique_ptr<Expression> expr;
+  ExpressionStatement(Expr expr) : expr(std::move(expr)) {}
+  Expr expr;
 };
 class IncrementStatement : public Statement {
 public:
-  IncrementStatement(std::unique_ptr<Expression> expr)
-      : expr(std::move(expr)) {}
-  std::unique_ptr<Expression> expr;
+  IncrementStatement(Expr expr) : expr(std::move(expr)) {}
+  Expr expr;
 };
 class DecrementStatement : public Statement {
 public:
-  DecrementStatement(std::unique_ptr<Expression> expr)
-      : expr(std::move(expr)) {}
-  std::unique_ptr<Expression> expr;
-};
-class AssignmentStatement : public Statement {
-public:
-  AssignmentStatement(std::unique_ptr<Expression> left,
-                      std::unique_ptr<Expression> right)
-      : left(std::move(left)), right(std::move(right)) {}
-  std::unique_ptr<Expression> left;
-  std::unique_ptr<Expression> right;
+  DecrementStatement(Expr expr) : expr(std::move(expr)) {}
+  Expr expr;
 };
 
-class ForStatement : Statement {};
+class AssignmentStatement : public Statement {
+public:
+  AssignmentStatement(std::vector<Expr> left, std::vector<Expr> right)
+      : left(std::move(left)), right(std::move(right)) {}
+  std::vector<Expr> left;
+  std::vector<Expr> right;
+};
+
+class ForStatement : public Statement {
+public:
+  ForStatement(Stmt initial, Expr condition, Stmt update)
+      : initial(std::move(initial)), condition(std::move(condition)),
+        update(std::move(update)) {}
+  Stmt initial;
+  Expr condition;
+  Stmt update;
+};
 
 class ReturnStatement : public Statement {
 public:
-  ReturnStatement(std::unique_ptr<Expression> value)
-      : value(std::move(value)) {}
-  std::unique_ptr<Expression> value;
+  ReturnStatement(std::vector<Expr> values) : values(std::move(values)) {}
+  std::vector<Expr> values;
 };
 
 class BlockStatement : Statement {
 public:
-  BlockStatement(std::vector<std::unique_ptr<Statement>> statements)
+  BlockStatement(std::vector<Stmt> statements)
       : statements(std::move(statements)) {}
-  std::vector<std::unique_ptr<Statement>> statements;
+  std::vector<Stmt> statements;
 };
+
+using Block = std::unique_ptr<ast::BlockStatement>;
 
 class IfStatement : public Statement {
 public:
-  IfStatement(std::unique_ptr<Expression> condition,
-              std::unique_ptr<BlockStatement> consequence,
-              std::unique_ptr<BlockStatement> alternative)
+  IfStatement(Expr condition, Block consequence, Block alternative)
       : condition(std::move(condition)), consequence(std::move(consequence)),
         alternative(std::move(alternative)) {}
 
-  std::unique_ptr<Expression> condition;
-  std::unique_ptr<BlockStatement> consequence;
-  std::unique_ptr<BlockStatement> alternative;
+  Expr condition;
+  Block consequence;
+  Block alternative;
 };
 
 class Parameter {
@@ -143,7 +165,7 @@ public:
   std::string_view name;
   std::vector<DataType> returnValues;
   std::optional<std::vector<Parameter>> params;
-  std::unique_ptr<BlockStatement> block;
+  Block block;
 }; // No first-class functions here 😭
 
 } // namespace ast

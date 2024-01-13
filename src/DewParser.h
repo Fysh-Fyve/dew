@@ -33,6 +33,7 @@ using DewCursor = DewTSObject<Cursor, newCursor, deleteCursor>;
 using ParamList = std::optional<std::vector<ast::Parameter>>;
 
 class DewParser {
+
 public:
   DewParser(std::string source);
   TSNode root() const;
@@ -41,9 +42,10 @@ public:
 
   ast::Function parseFunction(TSNode node);
   ast::Parameter parseParameter(TSNode node);
-  std::unique_ptr<ast::BlockStatement> parseBlock(TSNode node);
-  std::unique_ptr<ast::Statement> parseStatement(TSNode node);
-  std::unique_ptr<ast::Expression> parseExpression(TSNode node);
+  ast::Block parseBlock(TSNode node);
+  ast::Stmt parseStmt(TSNode node);
+  ast::Expr parseExpr(TSNode node);
+  std::vector<ast::Expr> parseExprList(TSNode node);
 
   ParamList parseParamList(TSNode node);
 

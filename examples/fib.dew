@@ -1,5 +1,5 @@
 fun fib(i32 n) i32 {
-  if (n <= 1) {
+  if (n <= 0x00_00_00_01) {
     return 1
     return
   } else {
