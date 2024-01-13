@@ -18,17 +18,8 @@
 #define DEW_PARSER_H_
 
 #include "ast.h"
-#include "main.h"
 #include <string>
 #include <tree_sitter/api.h>
-
-class Cursor {
-public:
-  TSTreeCursor cur;
-};
-Cursor *newCursor(TSNode node);
-void deleteCursor(Cursor *cur);
-using DewCursor = DewTSObject<Cursor, newCursor, deleteCursor>;
 
 using ParamList = std::optional<std::vector<ast::Parameter>>;
 
@@ -56,10 +47,5 @@ private:
   TSParser *parser;
   TSTree *tree;
 };
-
-template <std::size_t N>
-constexpr TSNode getField(TSNode &node, const char (&str)[N]) {
-  return ts_node_child_by_field_name(node, str, N - 1);
-}
 
 #endif // !DEW_PARSER_H_

@@ -16,15 +16,13 @@
  */
 #include "DewParser.h"
 #include "ast.h"
-#include "main.h"
+#include "util.h"
 #include <iostream>
 #include <memory>
 #include <optional>
 #include <ostream>
-#include <sstream>
 #include <string_view>
 #include <tree_sitter/api.h>
-#include <unordered_map>
 #include <vector>
 
 using Expr = ast::Expr;
@@ -68,27 +66,6 @@ ParamList DewParser::parseParamList(TSNode node) {
   return p;
 }
 
-std::optional<ast::BinaryOp> getBinaryOp(const std::string_view &str) {
-  static const std::unordered_map<std::string_view, ast::BinaryOp> enumMap{
-      {"*", ast::BinaryOp::Mul},         {"/", ast::BinaryOp::Div},
-      {"%", ast::BinaryOp::Mod},         {"<<", ast::BinaryOp::ShiftLeft},
-      {">>", ast::BinaryOp::ShiftRight}, {"&", ast::BinaryOp::BitAnd},
-      {"+", ast::BinaryOp::Add},         {"-", ast::BinaryOp::Sub},
-      {"|", ast::BinaryOp::BitOr},       {"^", ast::BinaryOp::BitXor},
-      {">", ast::BinaryOp::GT},          {"<", ast::BinaryOp::LT},
-      {">=", ast::BinaryOp::GTEq},       {"<=", ast::BinaryOp::LTEq},
-      {"==", ast::BinaryOp::Eq},         {"!=", ast::BinaryOp::Neq},
-      {"&&", ast::BinaryOp::And},        {"||", ast::BinaryOp::Or},
-  };
-  auto it{enumMap.find(str)};
-  if (it != enumMap.end()) {
-    return it->second;
-  } else {
-    std::cerr << "Invalid operand: " << str << "\n";
-    return std::nullopt;
-  }
-}
-
 ast::Expr DewParser::parseExpr(TSNode node) {
   if (ts_node_is_null(node)) {
     return Expr(nullptr);
@@ -99,7 +76,7 @@ ast::Expr DewParser::parseExpr(TSNode node) {
   } else if (type == "binary_expression") {
     Expr left{parseExpr(getField(node, "left"))};
     Expr right{parseExpr(getField(node, "right"))};
-    std::string_view op{nodeStr(getField(node, "operator"))};
+    ast::BinaryOp binOp{getBinaryOp(nodeStr(getField(node, "operator")))};
     // TODO: Throw on invalid expression?
     if (!left || !right) {
       return Expr(nullptr);
@@ -107,47 +84,19 @@ ast::Expr DewParser::parseExpr(TSNode node) {
     if (left->type != right->type) {
       // TODO: handle error?
     }
-    std::optional<ast::BinaryOp> binOp{getBinaryOp(op)};
-    if (binOp.has_value()) {
-      // TODO: CHeck if the operation is valid
-      // check if the operator is valid, but then again we only have integers?
-      return std::make_unique<ast::BinaryExpression>(
-          std::move(left), binOp.value(), std::move(right));
-    }
-    return Expr(nullptr);
+    // TODO: CHeck if the operation is valid
+    // check if the operator is valid, but then again we only have integers?
+    return std::make_unique<ast::BinaryExpression>(std::move(left), binOp,
+                                                   std::move(right));
   } else if (type == "identifier") {
     // TODO: check for conflicts here
     return std::make_unique<ast::Identifier>(nodeStr(node));
   } else if (type == "call_expression") {
-    Expr function{parseExpr(getField(node, "function"))};
-    TSNode arguments{getField(node, "arguments")};
-    std::vector<Expr> args{parseExprList(arguments)};
-    return std::make_unique<ast::CallExpression>(std::move(function),
-                                                 std::move(args));
+    return std::make_unique<ast::CallExpression>(
+        parseExpr(getField(node, "function")),
+        parseExprList(getField(node, "arguments")));
   } else if (type == "int_literal") {
-    int base{10};
-    std::stringstream ss;
-    for (const char c : nodeStr(node)) {
-      switch (c) {
-      case 'x':
-      case 'X':
-        base = 16;
-        break;
-      case 'o':
-      case 'O':
-        base = 8;
-        break;
-      case 'b':
-      case 'B':
-        base = 2;
-        break;
-      case '_':
-        break;
-      default:
-        ss << c;
-      }
-    }
-    return std::make_unique<ast::IntegerLiteral>(std::stoi(ss.str(), 0, base));
+    return std::make_unique<ast::IntegerLiteral>(parseInt(nodeStr(node)));
   } else {
     // TODO: do the rest of the expression types
     std::cerr << "Invalid type: " << type << "\n";
@@ -254,10 +203,4 @@ std::string_view DewParser::nodeStr(TSNode node) const {
 DewParser::~DewParser() {
   ts_tree_delete(tree);
   ts_parser_delete(parser);
-}
-
-Cursor *newCursor(TSNode node) { return new Cursor{ts_tree_cursor_new(node)}; }
-void deleteCursor(Cursor *cur) {
-  ts_tree_cursor_delete(&cur->cur);
-  delete cur;
 }

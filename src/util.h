@@ -14,9 +14,12 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef DEW_MAIN_H_
-#define DEW_MAIN_H_
+#ifndef DEW_UTIL_H_
+#define DEW_UTIL_H_
 
+#include "ast.h"
+#include <cstdint>
+#include <string_view>
 #include <tree_sitter/api.h>
 
 extern "C" TSLanguage *tree_sitter_dew();
@@ -36,4 +39,21 @@ private:
 inline void freeChar(char *b) { free(b); }
 using SExpression = DewTSObject<char, ts_node_string, freeChar>;
 
-#endif // DEW_MAIN_H_
+uint64_t parseInt(const std::string_view &literal);
+
+ast::BinaryOp getBinaryOp(const std::string_view &str);
+
+template <std::size_t N>
+constexpr TSNode getField(TSNode &node, const char (&str)[N]) {
+  return ts_node_child_by_field_name(node, str, N - 1);
+}
+
+class Cursor {
+public:
+  TSTreeCursor cur;
+};
+Cursor *newCursor(TSNode node);
+void deleteCursor(Cursor *cur);
+using DewCursor = DewTSObject<Cursor, newCursor, deleteCursor>;
+
+#endif // !DEW_UTIL_H_
