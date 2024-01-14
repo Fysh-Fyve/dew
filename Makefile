@@ -53,6 +53,8 @@ $(GRAMMAR)/%.o: $(GRAMMAR)/%.c
 
 COMP_DB := compile_commands.json
 
+lsp: $(COMP_DB)
+
 # did you `sudo apt install libstdc++-12-dev` ??
 $(COMP_DB): $(SRC)
 	bear -- $(MAKE) clean all
@@ -74,4 +76,4 @@ $(SHARED_LIB): tree-sitter/Makefile
 clean:
 	rm -rf $(EXE) $(OBJ) $(COMP_DB)
 
-.PHONY: all clean
+.PHONY: all clean mem-test lsp

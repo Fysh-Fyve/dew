@@ -34,6 +34,7 @@ class Definition {
 public:
   Definition(DefinitionType defType) : defType(defType) {}
   DefinitionType defType;
+  virtual ~Definition() = default;
 };
 
 namespace ast {
