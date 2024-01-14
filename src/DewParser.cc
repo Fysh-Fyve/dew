@@ -15,6 +15,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 #include "DewParser.h"
+#include "DewContext.h"
 #include "ast.h"
 #include "util.h"
 #include <iostream>
@@ -31,9 +32,9 @@ using Block = ast::Block;
 void dbg(TSNode node) { std::cout << SExpression{node}.get() << std::endl; }
 
 TSParser *newTSParser() {
-  auto p{ts_parser_new()};
-  ts_parser_set_language(p, tree_sitter_dew());
-  return p;
+  TSParser *parser{ts_parser_new()};
+  ts_parser_set_language(parser, tree_sitter_dew());
+  return parser;
 }
 
 DewParser::DewParser(std::string source)
@@ -170,30 +171,54 @@ Block DewParser::parseBlock(TSNode node) {
   return std::make_unique<ast::BlockStatement>(std::move(list));
 }
 
-ast::Function DewParser::parseFunction(TSNode node) {
-  return ast::Function{
-      nodeStr(getField(node, "name")),
-      std::vector<DataType>(), // TODO: Parse return type
-      parseParamList(getField(node, "parameters")),
-      parseBlock(getField(node, "body")),
-  };
+FunctionDeclaration DewParser::parseFunctionDeclaration(TSNode node) {
+  return FunctionDeclaration{nodeStr(getField(node, "name")),
+                             std::vector<DataType>(), // TODO: Parse return type
+                             parseParamList(getField(node, "parameters"))};
+}
+
+ast::Function DewParser::parseFunction(TSNode node, FunctionDeclaration *decl) {
+  return ast::Function{decl, parseBlock(getField(node, "body"))};
 }
 
 void DewParser::parseSource() {
   TSNode rootNode{root()};
-  DewCursor cur{rootNode};
-  TSTreeCursor *c{&cur.get()->cur};
-  ts_tree_cursor_goto_first_child(c);
-  do {
-    TSNode node{ts_tree_cursor_current_node(c)};
-    std::string_view type{ts_node_type(node)};
-    if (type == "function_declaration") {
-      parseFunction(node);
-    } else {
-      std::cerr << "Invalid type: " << type << "\n";
-      return;
-    }
-  } while (ts_tree_cursor_goto_next_sibling(c));
+  DewContext ctx{nullptr};
+  // Get top-level defines first
+  {
+    DewCursor cur{rootNode};
+    TSTreeCursor *c{&cur.get()->cur};
+    ts_tree_cursor_goto_first_child(c);
+    do {
+      TSNode node{ts_tree_cursor_current_node(c)};
+      std::string_view type{ts_node_type(node)};
+      if (type == "function_declaration") {
+        auto decl = new FunctionDeclaration{parseFunctionDeclaration(node)};
+        ctx.define(decl->name, decl);
+      } else {
+        std::cerr << "Invalid type: " << type << "\n";
+        return;
+      }
+    } while (ts_tree_cursor_goto_next_sibling(c));
+  }
+  // Do it again
+  {
+    DewCursor cur{rootNode};
+    TSTreeCursor *c{&cur.get()->cur};
+    ts_tree_cursor_goto_first_child(c);
+    do {
+      TSNode node{ts_tree_cursor_current_node(c)};
+      std::string_view type{ts_node_type(node)};
+      if (type == "function_declaration") {
+        auto name{nodeStr(getField(node, "name"))};
+        // TODO: what to do with this?
+        parseFunction(node, (FunctionDeclaration *)ctx.resolve(name).value());
+      } else {
+        std::cerr << "Invalid type: " << type << "\n";
+        return;
+      }
+    } while (ts_tree_cursor_goto_next_sibling(c));
+  }
 }
 
 std::string_view DewParser::nodeStr(TSNode node) const {

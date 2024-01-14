@@ -21,17 +21,17 @@
 #include <string>
 #include <tree_sitter/api.h>
 
-using ParamList = std::vector<ast::Parameter>;
+using ParamList = std::optional<std::vector<ast::Parameter>>;
 
 class DewParser {
-
 public:
   DewParser(std::string source);
   TSNode root() const;
   std::string_view nodeStr(TSNode node) const;
   void parseSource();
 
-  ast::Function parseFunction(TSNode node);
+  FunctionDeclaration parseFunctionDeclaration(TSNode node);
+  ast::Function parseFunction(TSNode node, FunctionDeclaration *decl);
   ast::Parameter parseParameter(TSNode node);
   ast::Block parseBlock(TSNode node);
   ast::Stmt parseStmt(TSNode node);

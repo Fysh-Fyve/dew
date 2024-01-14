@@ -23,6 +23,17 @@
 #include <string_view>
 #include <vector>
 
+enum class DefinitionType {
+  Variable,
+  Function,
+};
+
+class Definition {
+public:
+  Definition(DefinitionType defType) : defType(defType) {}
+  DefinitionType defType;
+};
+
 namespace ast {
 enum class BinaryOp {
   Add,
@@ -163,15 +174,27 @@ public:
   DataType type;
   std::string_view name;
 };
+} // namespace ast
+using ParamList = std::optional<std::vector<ast::Parameter>>;
 
-class Function {
+class FunctionDeclaration : public Definition {
 public:
+  FunctionDeclaration(std::string_view name, std::vector<DataType> returnValues,
+                      ParamList params)
+      : Definition(DefinitionType::Function), name(name),
+        returnValues(returnValues), params(params) {}
   std::string_view name;
   std::vector<DataType> returnValues;
-  std::optional<std::vector<Parameter>> params;
+  ParamList params;
+};
+
+namespace ast {
+class Function : public FunctionDeclaration {
+public:
+  Function(FunctionDeclaration *decl, Block block)
+      : FunctionDeclaration(*decl), block(std::move(block)) {}
   Block block;
 }; // No first-class functions here 😭
-
 } // namespace ast
 
 #endif // !DEW_AST_H_

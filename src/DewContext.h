@@ -14,18 +14,34 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-#ifndef DEW_TYPE_H_
-#define DEW_TYPE_H_
+#ifndef DEW_CONTEXT_H_
+#define DEW_CONTEXT_H_
 
+#include "ast.h"
+#include <optional>
 #include <string_view>
+#include <unordered_map>
 
-using DataType = std::string_view;
+class DewContextStack;
 
-constexpr DataType INT8 = "i8";
-constexpr DataType INT16 = "i16";
-constexpr DataType INT32 = "i32";
-constexpr DataType UINT8 = "u8";
-constexpr DataType UINT16 = "u16";
-constexpr DataType UINT32 = "u32";
+class DewContext {
+public:
+  DewContext(DewContext *parent);
+  ~DewContext();
+  void define(const std::string_view &name, Definition *definition);
+  std::optional<Definition *> resolve(const std::string_view &name);
+  DewContext *next;
 
-#endif // !DEW_TYPE_H_
+private:
+  DewContext *parent;
+  DewContextStack *children;
+  std::unordered_map<std::string_view, Definition *> definitions;
+};
+
+class DewContextStack {
+public:
+  DewContextStack();
+  DewContext *head;
+  ~DewContextStack();
+};
+#endif // !DEW_CONTEXT_H_
