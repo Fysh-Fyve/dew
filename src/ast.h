@@ -49,6 +49,7 @@ enum class UnaryOp { Pos, Neg, Not, BitNot, Deref, Ref };
 class Expression {
 public:
   DataType type;
+  virtual ~Expression() = default;
 };
 
 using Expr = std::unique_ptr<ast::Expression>;
@@ -82,7 +83,10 @@ public:
   std::vector<Expr> arguments;
 };
 
-class Statement {};
+class Statement {
+public:
+  virtual ~Statement() = default;
+};
 
 using Stmt = std::unique_ptr<ast::Statement>;
 

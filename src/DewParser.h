@@ -21,7 +21,7 @@
 #include <string>
 #include <tree_sitter/api.h>
 
-using ParamList = std::optional<std::vector<ast::Parameter>>;
+using ParamList = std::vector<ast::Parameter>;
 
 class DewParser {
 
@@ -37,9 +37,7 @@ public:
   ast::Stmt parseStmt(TSNode node);
   ast::Expr parseExpr(TSNode node);
   std::vector<ast::Expr> parseExprList(TSNode node);
-
-  ParamList parseParamList(TSNode node);
-
+  std::optional<ParamList> parseParamList(TSNode node);
   ~DewParser();
 
 private:

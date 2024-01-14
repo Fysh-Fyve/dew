@@ -19,7 +19,6 @@
 #include "util.h"
 #include <iostream>
 #include <memory>
-#include <optional>
 #include <ostream>
 #include <string_view>
 #include <tree_sitter/api.h>
@@ -54,7 +53,7 @@ ast::Parameter DewParser::parseParameter(TSNode node) {
   return ast::Parameter{nodeStr(type), name};
 }
 
-ParamList DewParser::parseParamList(TSNode node) {
+std::optional<ParamList> DewParser::parseParamList(TSNode node) {
   TSNode params{getField(node, "params")};
   if (ts_node_is_null(params)) {
     return std::nullopt;
@@ -63,7 +62,7 @@ ParamList DewParser::parseParamList(TSNode node) {
   TSTreeCursor *c{&cur.get()->cur};
   ParamList p;
   do {
-    p->push_back(parseParameter(ts_tree_cursor_current_node(c)));
+    p.emplace_back(parseParameter(ts_tree_cursor_current_node(c)));
   } while (ts_tree_cursor_goto_next_sibling(c));
 
   return p;
@@ -112,7 +111,7 @@ std::vector<Expr> DewParser::parseExprList(TSNode node) {
   if (!ts_node_is_null(node)) {
     TSNode s{ts_node_named_child(node, 0)};
     while (!ts_node_is_null(s)) {
-      values.push_back(parseExpr(s));
+      values.emplace_back(parseExpr(s));
       s = ts_node_next_named_sibling(s);
     }
   }
@@ -165,7 +164,7 @@ Block DewParser::parseBlock(TSNode node) {
   std::vector<Stmt> list;
   TSNode s{ts_node_named_child(node, 0)};
   while (!ts_node_is_null(s)) {
-    list.push_back(parseStmt(s));
+    list.emplace_back(parseStmt(s));
     s = ts_node_next_named_sibling(s);
   }
   return std::make_unique<ast::BlockStatement>(std::move(list));
