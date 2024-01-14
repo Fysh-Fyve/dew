@@ -24,6 +24,7 @@
 #include <string>
 #include <tree_sitter/api.h>
 
+namespace dew {
 class DewParser {
 public:
   DewParser(std::string source);
@@ -46,5 +47,5 @@ private:
   TSParser *parser;
   TSTree *tree;
 };
-
+} // namespace dew
 #endif // !DEW_PARSER_H_

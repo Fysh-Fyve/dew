@@ -26,7 +26,9 @@
 #include "ast.h"
 #include "util.h"
 
-ast::BinaryOp getBinaryOp(const std::string_view &str) {
+using namespace dew;
+
+ast::BinaryOp dew::getBinaryOp(const std::string_view &str) {
   static const std::unordered_map<std::string_view, ast::BinaryOp> enumMap{
       {"*", ast::BinaryOp::Mul},         {"/", ast::BinaryOp::Div},
       {"%", ast::BinaryOp::Mod},         {"<<", ast::BinaryOp::ShiftLeft},
@@ -48,7 +50,7 @@ ast::BinaryOp getBinaryOp(const std::string_view &str) {
   }
 }
 
-uint64_t parseInt(const std::string_view &literal) {
+uint64_t dew::parseInt(const std::string_view &literal) {
   int base{10};
   std::stringstream ss;
   for (const char c : literal) {
@@ -74,8 +76,10 @@ uint64_t parseInt(const std::string_view &literal) {
   return std::stoll(ss.str(), 0, base);
 }
 
-Cursor *newCursor(TSNode node) { return new Cursor{ts_tree_cursor_new(node)}; }
-void deleteCursor(Cursor *cur) {
+Cursor *dew::newCursor(TSNode node) {
+  return new Cursor{ts_tree_cursor_new(node)};
+}
+void dew::deleteCursor(Cursor *cur) {
   ts_tree_cursor_delete(&cur->cur);
   delete cur;
 }

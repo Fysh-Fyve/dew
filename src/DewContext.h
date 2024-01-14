@@ -25,6 +25,7 @@
 #include <string_view>
 #include <unordered_map>
 
+namespace dew {
 class DewContextStack;
 
 class DewContext {
@@ -47,4 +48,5 @@ public:
   DewContext *head;
   ~DewContextStack();
 };
+} // namespace dew
 #endif // !DEW_CONTEXT_H_

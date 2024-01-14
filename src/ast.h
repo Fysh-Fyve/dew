@@ -25,6 +25,7 @@
 #include <string_view>
 #include <vector>
 
+namespace dew {
 enum class DefinitionType {
   Variable,
   Function,
@@ -201,5 +202,6 @@ public:
   Block block;
 }; // No first-class functions here 😭
 } // namespace ast
+} // namespace dew
 
 #endif // !DEW_AST_H_

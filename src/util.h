@@ -25,6 +25,7 @@
 #include <string_view>
 #include <tree_sitter/api.h>
 
+namespace dew {
 extern "C" TSLanguage *tree_sitter_dew();
 
 template <typename TSObject, TSObject *(*Alloc)(TSNode),
@@ -58,5 +59,5 @@ public:
 Cursor *newCursor(TSNode node);
 void deleteCursor(Cursor *cur);
 using DewCursor = DewTSObject<Cursor, newCursor, deleteCursor>;
-
+} // namespace dew
 #endif // !DEW_UTIL_H_

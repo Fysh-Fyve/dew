@@ -22,6 +22,7 @@
 
 #include <string_view>
 
+namespace dew {
 using DataType = std::string_view;
 
 constexpr DataType INT8 = "i8";
@@ -30,5 +31,6 @@ constexpr DataType INT32 = "i32";
 constexpr DataType UINT8 = "u8";
 constexpr DataType UINT16 = "u16";
 constexpr DataType UINT32 = "u32";
+} // namespace dew
 
 #endif // !DEW_TYPE_H_

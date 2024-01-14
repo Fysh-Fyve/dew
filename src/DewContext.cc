@@ -20,6 +20,8 @@
 #include "DewContext.h"
 #include <optional>
 
+using namespace dew;
+
 DewContextStack::DewContextStack() : head{nullptr} {}
 
 DewContextStack::~DewContextStack() {

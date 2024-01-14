@@ -28,6 +28,8 @@
 #include <tree_sitter/api.h>
 #include <vector>
 
+using namespace dew;
+
 using Expr = ast::Expr;
 using Stmt = ast::Stmt;
 using Block = ast::Block;

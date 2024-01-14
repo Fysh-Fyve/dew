@@ -23,6 +23,8 @@
 #include <sstream>
 #include <tree_sitter/api.h>
 
+using namespace dew;
+
 std::string fileToString(const char *path) {
   std::ifstream sourceFile{path};
   if (!sourceFile.is_open()) {
