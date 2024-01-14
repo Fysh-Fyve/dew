@@ -19,12 +19,12 @@ The first invocation will clone the `tree-sitter` and `tree-sitter-dew`
 submodules and compile the `libtree-sitter` static library.
 
 Any time the `grammar.js` is modified, it will also generate and compile the
-parser into an object for linkage.
+parser into an object file for linkage.
 
 Run the program with an example file:
 
 ```
-./dewc ./examples/main.dew
+./dewc ./examples/fib.dew
 ```
 
 ## Tree-sitter Parser
