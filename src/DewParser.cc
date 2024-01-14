@@ -14,6 +14,9 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+/**
+ * \file DewParser.cc
+ */
 #include "DewParser.h"
 #include "DewContext.h"
 #include "ast.h"
@@ -54,14 +57,14 @@ ast::Parameter DewParser::parseParameter(TSNode node) {
   return ast::Parameter{nodeStr(type), name};
 }
 
-std::optional<ParamList> DewParser::parseParamList(TSNode node) {
+ParamList DewParser::parseParamList(TSNode node) {
+  ParamList p;
   TSNode params{getField(node, "params")};
   if (ts_node_is_null(params)) {
-    return std::nullopt;
+    return p;
   }
   DewCursor cur{params};
   TSTreeCursor *c{&cur.get()->cur};
-  ParamList p;
   do {
     p.emplace_back(parseParameter(ts_tree_cursor_current_node(c)));
   } while (ts_tree_cursor_goto_next_sibling(c));
@@ -212,7 +215,7 @@ void DewParser::parseSource() {
       if (type == "function_declaration") {
         auto name{nodeStr(getField(node, "name"))};
         // TODO: what to do with this?
-        parseFunction(node, (FunctionDeclaration *)ctx.resolve(name).value());
+        parseFunction(node, (FunctionDeclaration *)(ctx.resolve(name).value()));
       } else {
         std::cerr << "Invalid type: " << type << "\n";
         return;

@@ -37,6 +37,9 @@ $(EXE): $(OBJ) $(GRAMMAR)/src/parser.o $(SHARED_LIB)
 	@echo CXX $^
 	@$(CXX) $(CXXFLAGS) -o $@ $(TS_INCLUDE_FLAGS) $^
 
+mem-test: $(EXE)
+	valgrind -s --leak-check=full ./$(EXE) ./examples/fib.dew
+
 obj/%.o: src/%.cc $(SHARED_LIB) | obj
 	@echo CXX $<
 	@$(CXX) -c $(CXXFLAGS) $(TS_INCLUDE_FLAGS) $< -o $@

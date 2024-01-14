@@ -14,14 +14,15 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+/**
+ * \file DewParser.h
+ */
 #ifndef DEW_PARSER_H_
 #define DEW_PARSER_H_
 
 #include "ast.h"
 #include <string>
 #include <tree_sitter/api.h>
-
-using ParamList = std::optional<std::vector<ast::Parameter>>;
 
 class DewParser {
 public:
@@ -37,7 +38,7 @@ public:
   ast::Stmt parseStmt(TSNode node);
   ast::Expr parseExpr(TSNode node);
   std::vector<ast::Expr> parseExprList(TSNode node);
-  std::optional<ParamList> parseParamList(TSNode node);
+  ParamList parseParamList(TSNode node);
   ~DewParser();
 
 private:

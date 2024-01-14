@@ -14,12 +14,14 @@
  * You should have received a copy of the GNU Affero General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+/**
+ * \file ast.h
+ */
 #ifndef DEW_AST_H_
 #define DEW_AST_H_
 
 #include "type.h"
 #include <memory>
-#include <optional>
 #include <string_view>
 #include <vector>
 
@@ -171,11 +173,12 @@ public:
 
 class Parameter {
 public:
+  Parameter(DataType type, std::string_view name) : type(type), name(name) {}
   DataType type;
   std::string_view name;
 };
 } // namespace ast
-using ParamList = std::optional<std::vector<ast::Parameter>>;
+using ParamList = std::vector<ast::Parameter>;
 
 class FunctionDeclaration : public Definition {
 public:
@@ -189,10 +192,11 @@ public:
 };
 
 namespace ast {
-class Function : public FunctionDeclaration {
+class Function {
 public:
   Function(FunctionDeclaration *decl, Block block)
-      : FunctionDeclaration(*decl), block(std::move(block)) {}
+      : decl(decl), block(std::move(block)) {}
+  FunctionDeclaration *decl;
   Block block;
 }; // No first-class functions here 😭
 } // namespace ast
