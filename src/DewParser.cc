@@ -186,44 +186,53 @@ ast::Function DewParser::parseFunction(TSNode node, FunctionDeclaration *decl) {
   return ast::Function{decl, parseBlock(getField(node, "body"))};
 }
 
+DewContext DewParser::defineTopLevel(TSNode node) {
+  DewContext ctx{nullptr};
+  DewCursor cur{node};
+  TSTreeCursor *c{&cur.get()->cur};
+  ts_tree_cursor_goto_first_child(c);
+  do {
+    TSNode node{ts_tree_cursor_current_node(c)};
+    std::string_view type{ts_node_type(node)};
+    if (type == "function_declaration") {
+      auto decl = new FunctionDeclaration{parseFunctionDeclaration(node)};
+      ctx.define(decl->name, decl);
+    } else {
+      std::cerr << "Invalid type: " << type << "\n";
+      return ctx;
+    }
+  } while (ts_tree_cursor_goto_next_sibling(c));
+
+  return ctx;
+}
+
+void DewParser::defineFunctions(TSNode node, DewContext &topLevel) {
+  std::vector<ast::Function> functions;
+  DewCursor cur{node};
+  TSTreeCursor *c{&cur.get()->cur};
+  ts_tree_cursor_goto_first_child(c);
+  do {
+    TSNode node{ts_tree_cursor_current_node(c)};
+    std::string_view type{ts_node_type(node)};
+    if (type == "function_declaration") {
+      auto name{nodeStr(getField(node, "name"))};
+      auto decl{(FunctionDeclaration *)(topLevel.resolve(name).value())};
+      functions.emplace_back(parseFunction(node, decl));
+    } else {
+      std::cerr << "Invalid type: " << type << "\n";
+      return;
+    }
+  } while (ts_tree_cursor_goto_next_sibling(c));
+
+  // TODO: Do something with the functions. Maybe compile them?
+  for (const auto &f : functions) {
+    std::cout << f.decl->name << "\n";
+  }
+}
 void DewParser::parseSource() {
   TSNode rootNode{root()};
-  DewContext ctx{nullptr};
-  // Get top-level defines first
-  {
-    DewCursor cur{rootNode};
-    TSTreeCursor *c{&cur.get()->cur};
-    ts_tree_cursor_goto_first_child(c);
-    do {
-      TSNode node{ts_tree_cursor_current_node(c)};
-      std::string_view type{ts_node_type(node)};
-      if (type == "function_declaration") {
-        auto decl = new FunctionDeclaration{parseFunctionDeclaration(node)};
-        ctx.define(decl->name, decl);
-      } else {
-        std::cerr << "Invalid type: " << type << "\n";
-        return;
-      }
-    } while (ts_tree_cursor_goto_next_sibling(c));
-  }
-  // Do it again
-  {
-    DewCursor cur{rootNode};
-    TSTreeCursor *c{&cur.get()->cur};
-    ts_tree_cursor_goto_first_child(c);
-    do {
-      TSNode node{ts_tree_cursor_current_node(c)};
-      std::string_view type{ts_node_type(node)};
-      if (type == "function_declaration") {
-        auto name{nodeStr(getField(node, "name"))};
-        // TODO: what to do with this?
-        parseFunction(node, (FunctionDeclaration *)(ctx.resolve(name).value()));
-      } else {
-        std::cerr << "Invalid type: " << type << "\n";
-        return;
-      }
-    } while (ts_tree_cursor_goto_next_sibling(c));
-  }
+  DewContext ctx{defineTopLevel(rootNode)};
+  defineFunctions(rootNode, ctx);
 }
 
 std::string_view DewParser::nodeStr(TSNode node) const {

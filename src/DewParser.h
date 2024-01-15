@@ -20,6 +20,7 @@
 #ifndef DEW_PARSER_H_
 #define DEW_PARSER_H_
 
+#include "DewContext.h"
 #include "ast.h"
 #include <string>
 #include <tree_sitter/api.h>
@@ -31,6 +32,8 @@ public:
   TSNode root() const;
   std::string_view nodeStr(TSNode node) const;
   void parseSource();
+  DewContext defineTopLevel(TSNode node);
+  void defineFunctions(TSNode node, DewContext &topLevel);
 
   FunctionDeclaration parseFunctionDeclaration(TSNode node);
   ast::Function parseFunction(TSNode node, FunctionDeclaration *decl);
@@ -46,6 +49,7 @@ private:
   std::string source;
   TSParser *parser;
   TSTree *tree;
+  DewContext *context;
 };
 } // namespace dew
 #endif // !DEW_PARSER_H_
